@@ -33,6 +33,6 @@ This project goes beyond a simple expense logger by functioning as a full budget
 
 ### 🧠 Why this Tech Stack?
 - **Knockout.js**: Chosen for its robust two-way data binding and dependency tracking using Observables. It enforces a clean separation of concerns (MVVM) without the heavy boilerplate or build-step requirements of larger frameworks like React or Angular, making it perfect for a lightweight, performant web app.
-- **Vanilla CSS (No Frameworks)**: Demonstrates strong fundamental CSS skills, including CSS Variables, Grid, Flexbox, and Media Queries for responsive design, avoiding the bloat of libraries like Bootstrap or Tailwind.
+- **Vanilla CSS (No FrameWorks)**: Demonstrates strong fundamental CSS skills, including CSS Variables, Grid, Flexbox, and Media Queries for responsive design, avoiding the bloat of libraries like Bootstrap or Tailwind.
 - **Service Workers (PWA)**: Implemented to cache assets and provide an offline-first experience, proving an understanding of modern web capabilities and native-like app experiences.
 
