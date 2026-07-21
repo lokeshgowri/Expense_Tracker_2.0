@@ -1,4 +1,4 @@
-# 💸 Expense Tracker 2.0 (Premium Edition)
+# 💸 Expense Tracker 2.0 
 
 A beautifully designed, modern **Expense Tracker** web application built using **HTML, CSS, JavaScript**, and **Knockout.js**. 
 
