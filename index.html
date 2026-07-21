@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Knockout -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.1/knockout-latest.min.js"></script>
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar / Add Expense Panel -->
+        <aside class="sidebar card">
+            <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h2><i class="ph ph-wallet"></i> Wallet</h2>
+                    <p>Track your spending seamlessly.</p>
+                </div>
+                <button class="btn-icon" data-bind="click: toggleTheme" title="Toggle Theme">
+                    <i class="ph" data-bind="css: isDarkMode() ? 'ph-sun' : 'ph-moon'"></i>
+                </button>
+            </div>
+
+            <div class="input-group">
+                <label>Monthly Income / Salary</label>
+                <input type="number" placeholder="0.00" data-bind="value: salary, valueUpdate: 'afterkeydown'">
+            </div>
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 4px 0;" />
+
+            <div class="add-expense-form">
+                <div class="input-group">
+                    <label>Description</label>
+                    <input type="text" placeholder="e.g. Morning Coffee"
+                        data-bind="value: newDescription, valueUpdate: 'afterkeydown'">
+                </div>
+
+                <div class="input-group row">
+                    <div class="input-half">
+                        <label>Amount</label>
+                        <input type="number" placeholder="0.00"
+                            data-bind="value: newAmount, valueUpdate: 'afterkeydown'">
+                    </div>
+                    <div class="input-half">
+                        <label>Category</label>
+                        <select data-bind="value: newCategory">
+                            <option value="Food">Food</option>
+                            <option value="Travel">Travel</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Custom Category Input (Visible only if Other is selected) -->
+                <div class="input-group" data-bind="visible: newCategory() === 'Other'">
+                    <label>Specify Category</label>
+                    <input type="text" placeholder="e.g. Movie, Fuel..."
+                        data-bind="value: customCategory, valueUpdate: 'afterkeydown'">
+                </div>
+
+                <div class="input-group row">
+                    <div class="input-half">
+                        <label>Date</label>
+                        <input type="date" data-bind="value: newDate">
+                    </div>
+                    <div class="input-half">
+                        <label>Method</label>
+                        <select data-bind="value: newPaymentMethod">
+                            <option value="Cash">Cash</option>
+                            <option value="Credit">Credit</option>
+                            <option value="Debit">Debit</option>
+                            <option value="Online">Online</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group file-upload-group">
+                    <label>Bill Photo</label>
+                    <label for="billFileInput" class="file-upload-btn">
+                        <i class="ph ph-camera"></i> <span
+                            data-bind="text: billPhotoName() ? billPhotoName() : 'Upload Receipt'"></span>
+                    </label>
+                    <input type="file" id="billFileInput" accept="image/*" style="display: none;"
+                        data-bind="event: { change: handleFileSelect }">
+                </div>
+
+                <button class="btn-primary" data-bind="click: addExpense">
+                    <i class="ph" data-bind="css: editingExpense() ? 'ph-pencil-simple' : 'ph-plus-circle'"></i>
+                    <span data-bind="text: editingExpense() ? 'Update Expense' : 'Add Expense'"></span>
+                </button>
+                <button class="btn-secondary" data-bind="visible: editingExpense, click: cancelEdit">
+                    Cancel Edit
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Area -->
+        <main class="dashboard">
+            <!-- Top Summary / Chart -->
+            <div class="summary-section">
+                <div class="total-card card">
+                    <h3>Income</h3>
+                    <h1 class="total-amount">$<span data-bind="text: salary"></span></h1>
+                </div>
+                <div class="total-card card">
+                    <h3>Total Expenses</h3>
+                    <h1 class="total-amount" style="color: #FF3B30;">-$<span data-bind="text: totalExpenses"></span>
+                    </h1>
+                </div>
+                <div class="total-card card">
+                    <h3>Savings</h3>
+                    <h1 class="total-amount" data-bind="style: { color: savings() >= 0 ? '#34C759' : '#FF3B30' }">
+                        $<span data-bind="text: savings"></span>
+                    </h1>
+                </div>
+                <div class="chart-card card">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Expense List -->
+            <div class="list-section card">
+                <div class="list-header">
+                    <h2>Recent Transactions</h2>
+                    <div class="filters">
+                        <input type="month" data-bind="value: filterMonth" title="Filter by Month">
+                        <select data-bind="value: filterMethod">
+                            <option value="">All Methods</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Credit">Credit</option>
+                            <option value="Debit">Debit</option>
+                            <option value="Online">Online</option>
+                        </select>
+                        <select data-bind="value: filterCategory">
+                            <option value="">All Categories</option>
+                            <option value="Food">Food</option>
+                            <option value="Travel">Travel</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="expense-list-container">
+                    <ul class="expense-list" data-bind="foreach: filteredExpenses">
+                        <li class="expense-item">
+                            <div class="expense-icon" data-bind="css: baseCategory.toLowerCase()">
+                                <i class="ph ph-receipt"></i>
+                            </div>
+                            <div class="expense-details">
+                                <h4 data-bind="text: description"></h4>
+                                <p>
+                                    <span class="badge" data-bind="text: category"></span> •
+                                    <span data-bind="text: date"></span> •
+                                    <span data-bind="text: paymentMethod"></span>
+                                </p>
+                            </div>
+                            <div class="expense-amount-action">
+                                <span class="amount">-$<span data-bind="text: amount"></span></span>
+                                <button class="btn-icon edit-btn" data-bind="click: $parent.editExpense" title="Edit">
+                                    <i class="ph ph-pencil-simple"></i>
+                                </button>
+                                <!-- ko if: billPhoto -->
+                                <button class="btn-icon photo-btn" data-bind="click: $parent.viewImage"
+                                    title="View Bill">
+                                    <i class="ph ph-image"></i>
+                                </button>
+                                <!-- /ko -->
+                                <button class="btn-icon delete-btn" data-bind="click: $parent.removeExpense"
+                                    title="Delete">
+                                    <i class="ph ph-trash"></i>
+                                </button>
+                            </div>
+                        </li>
+                    </ul>
+                    <div class="empty-state" data-bind="visible: filteredExpenses().length === 0">
+                        <i class="ph ph-files"></i>
+                        <p>No expenses found.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" data-bind="css: { show: toastMessage() }, text: toastMessage"></div>
+
+    <!-- Image Modal -->
+    <div class="modal-overlay" data-bind="visible: selectedImage, click: closeImage" style="display: none;">
+        <div class="modal-content" data-bind="click: function(data, event) { event.stopPropagation(); }">
+            <button class="close-btn" data-bind="click: closeImage"><i class="ph ph-x"></i></button>
+            <img data-bind="attr: { src: selectedImage }" class="modal-img" />
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
